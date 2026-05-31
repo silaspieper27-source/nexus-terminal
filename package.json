@@ -1,0 +1,25 @@
+{
+      "name": "nexus-terminal",
+        "version": "1.0.0",
+          "description": "Cyberpunk PC control dashboard",
+            "main": "main.js",
+              "scripts": {
+                    "start": "electron .",
+                        "build:win": "electron-builder --win"
+              },
+                "build": {
+                        "appId": "com.nexus.terminal",
+                            "productName": "Nexus Terminal",
+                                "directories": { "output": "dist" },
+                                    "win": { "target": "nsis" },
+                                        "files": ["main.js", "preload.js", "src/**/*"]
+                },
+                  "dependencies": {
+                        "ping": "^0.4.4",
+                            "systeminformation": "^5.22.11"
+                  },
+                    "devDependencies": {
+                            "electron": "^29.0.0",
+                                "electron-builder": "^24.13.3"
+                    }
+}
