@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus Terminal</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050505;
+      --panel: rgba(0,0,0,.78);
+      --border: rgba(80,255,100,.24);
+      --line: rgba(255,255,255,.08);
+      --green: #6cff6c;
+      --green-soft: #14d114;
+      --text: #eef4e7;
+      --accent: #90ff96;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #000; color: var(--text); font-family: "Consolas", "Courier New", monospace; }
+    body {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      gap: 12px;
+      padding: 12px;
+      background: radial-gradient(circle at top, rgba(30,255,90,.05), transparent 20%),
+                  linear-gradient(180deg, rgba(0,0,0,.95), rgba(0,0,0,1));
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 24px);
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 16px;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0,
+        transparent 24px,
+        rgba(255,255,255,.04) 25px,
+        transparent 26px
+      );
+      pointer-events: none;
+    }
+
+    .section {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .panel h1, .panel h2, .panel h3 {
+      margin: 0;
+      letter-spacing: .12em;
+      color: var(--accent);
+    }
+
+    h1 { font-size: 1.05rem; }
+    h2 { font-size: .95rem; }
+    h3 { font-size: .85rem; }
+
+    .label {
+      color: rgba(255,255,255,.66);
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+    }
+
+    .clock {
+      font-size: 2.3rem;
+      font-weight: 700;
+      text-shadow: 0 0 18px rgba(76,255,76,.4);
+      color: #abe9a8;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .bar {
+      width: 100%;
+      height: 10px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 999px;
+      background: rgba(255,255,255,.05);
+      overflow: hidden;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #40ff40, #12b712);
+      box-shadow: 0 0 12px rgba(56,255,56,.35);
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+    }
+
+    button, input, select {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.55);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 8px;
+      transition: border-color .2s, box-shadow .2s, transform .1s;
+      font: inherit;
+    }
+
+    button:hover { border-color: var(--green-soft); box-shadow: 0 0 18px rgba(22,255,22,.16); transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .button-wide { grid-column: span 2; }
+
+    .list {
+      display: grid;
+      gap: 8px;
+      overflow-y: auto;
+      padding-right: 4px;
+      max-height: 100%;
+    }
+
+    .list::-webkit-scrollbar { width: 8px; }
+    .list::-webkit-scrollbar-thumb { background: rgba(70,255,70,.22); border-radius: 999px; }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      background: rgba(0,0,0,.45);
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item .title { font-weight: 700; color: #b9ffb9; }
+    .item .meta { color: rgba(255,255,255,.6); font-size: .82rem; }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .field-grid input { width: 100%; }
+
+    .notice {
+      border: 1px dashed rgba(255,255,255,.15);
+      padding: 10px;
+      font-size: .82rem;
+      color: rgba(255,255,255,.7);
+      background: rgba(0,0,0,.3);
+      border-radius: 10px;
+    }
+
+    .info-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .info-row strong { color: #98ff98; }
+    .info-row span { color: rgba(255,255,255,.65); }
+
+    #matrix {
+      position: fixed;
+      z-index: 0;
+      pointer-events: none;
+      inset: 0;
+      opacity: .12;
+    }
+
+    .glass {
+      background: rgba(0,0,0,.5);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.03), transparent 65%);
+      pointer-events: none;
+    }
+
+    @media (max-width: 1280px) {
+      body { grid-template-columns: 240px 1fr 240px; gap: 10px; padding: 10px; }
+    }
+
+    @media (max-width: 980px) {
+      body { grid-template-columns: 1fr; }
+      .panel { height: auto; max-height: calc(100vh - 20px); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+
+  <section class="panel" id="left-panel">
+    <div class="section">
+      <h1>NEXUS TERMINAL</h1>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="notice">Rechtermuisklik op bookmark = verwijderen</div>
+    </div>
+
+    <div class="section glass">
+      <h2>Acties</h2>
+      <div class="button-grid">
+        <button onclick="run('fastStart')">⚡ Fast Start</button>
+        <button onclick="run('notepad')">Notepad</button>
+        <button onclick="run('calculator')">Calculator</button>
+        <button onclick="run('paint')">Paint</button>
+        <button onclick="run('cmd')">CMD</button>
+        <button onclick="run('taskmgr')">Task Manager</button>
+        <button onclick="run('explorer')">Explorer</button>
+      </div>
+    </div>
+
+    <div class="section glass">
+      <h2>Systeem</h2>
+      <div class="info-grid" id="system-info">
+        <div class="info-row"><strong>CPU</strong><span id="cpu">--%</span></div>
+        <div class="info-row"><strong>RAM</strong><span id="mem">-- / --</span></div>
+        <div class="info-row"><strong>Batterij</strong><span id="battery">--</span></div>
+        <div class="info-row"><strong>Online</strong><span id="online">--</span></div>
+        <div class="info-row"><strong>IP</strong><span id="ip">--</span></div>
+        <div class="info-row"><strong>Uptime</strong><span id="uptime">--</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="center-panel">
+    <div class="section glass">
+      <h2>Live Monitor</h2>
+      <div class="info-grid">
+        <div class="info-row"><strong>Processorbelasting</strong><span id="cpu-val">--%</span></div>
+        <div class="bar"><span id="cpu-bar" style="width:0%"></span></div>
+        <div class="info-row"><strong>Geheugengebruik</strong><span id="mem-val">--%</span></div>
+        <div class="bar"><span id="mem-bar" style="width:0%"></span></div>
+        <div class="info-row"><strong>Systeemnaam</strong><span id="host">NEXUS</span></div>
+      </div>
+    </div>
+
+    <div class="section glass" style="flex:1; overflow:hidden;">
+      <h2>Dashboard</h2>
+      <div class="notice">Alles vult exact het scherm, grid-based en fixed layout.</div>
+      <div class="button-grid">
+        <button onclick="action('lock')">🔒 Lock</button>
+        <button onclick="action('sleep')">💤 Sleep</button>
+        <button onclick="action('restart')">↺ Restart</button>
+        <button onclick="action('shutdown')">⏻ Shutdown</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="right-panel">
+    <div class="section glass">
+      <h2>Bookmarks</h2>
+      <div id="bookmark-list" class="list"></div>
+    </div>
+
+    <div class="section glass">
+      <h2>Bookmark toevoegen</h2>
+      <div class="field-grid">
+        <label class="label" for="bookmark-name">Naam</label>
+        <input id="bookmark-name" type="text" placeholder="DeepSeek" autocomplete="off">
+        <label class="label" for="bookmark-url">URL</label>
+        <input id="bookmark-url" type="text" placeholder="https://chat.deepseek.com/" autocomplete="off">
+      </div>
+      <button class="button-wide" onclick="addBookmark()">ADD</button>
+    </div>
+
+    <div class="section glass">
+      <h2>Opslaan</h2>
+      <div class="field-grid">
+        <label class="label" for="profile-name">Profiel</label>
+        <input id="profile-name" type="text" placeholder="Nexus user" autocomplete="off">
+      </div>
+      <button class="button-wide" onclick="saveConfig()">SAVE</button>
+    </div>
+  </section>
+
+  <script>
+    const api = window.nexus;
+    let config = { name: '', bookmarks: [] };
+
+    function pad(val) { return val.toString().padStart(2, '0'); }
+    function formatBytes(bytes) {
+      const gb = 1024 ** 3;
+      const mb = 1024 ** 2;
+      if (bytes >= gb) return (bytes / gb).toFixed(1) + ' GB';
+      return (bytes / mb).toFixed(0) + ' MB';
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+
+    function renderBookmarks() {
+      const list = document.getElementById('bookmark-list');
+      list.innerHTML = '';
+      if (!config.bookmarks.length) {
+        list.innerHTML = '<div class="notice">Geen bookmarks gevonden. Voeg een bookmark toe.</div>';
+        return;
+      }
+
+      config.bookmarks.forEach((bookmark, index) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `<span><span class="title">${bookmark.name}</span><br><span class="meta">${bookmark.url}</span></span>`;
+        item.addEventListener('click', () => openUrl(bookmark.url));
+        item.addEventListener('contextmenu', evt => {
+          evt.preventDefault();
+          if (confirm(`Verwijder bookmark \"${bookmark.name}\"?`)) {
+            config.bookmarks.splice(index, 1);
+            saveConfig(true);
+          }
+        });
+        list.appendChild(item);
+      });
+    }
+
+    function normalizeUrl(url) {
+      if (!url) return '';
+      if (!/^https?:\/\//i.test(url)) return 'https://' + url;
+      return url;
+    }
+
+    function addBookmark() {
+      const nameInput = document.getElementById('bookmark-name');
+      const urlInput = document.getElementById('bookmark-url');
+      const name = nameInput.value.trim();
+      const url = normalizeUrl(urlInput.value.trim());
+      if (!name || !url) return alert('Vul naam en URL in.');
+      config.bookmarks.unshift({ name, url });
+      nameInput.value = '';
+      urlInput.value = '';
+      renderBookmarks();
+      saveConfig(true);
+    }
+
+    function renderSystem(info) {
+      if (!info) return;
+      const memPct = info.memTotalBytes ? Math.round(info.memUsedBytes / info.memTotalBytes * 100) : 0;
+      document.getElementById('cpu').textContent = `${info.cpuLoad}%`;
+      document.getElementById('mem').textContent = `${formatBytes(info.memUsedBytes)} / ${formatBytes(info.memTotalBytes)}`;
+      document.getElementById('battery').textContent = info.battery.hasBattery ? `${info.battery.percent}% ${info.battery.isCharging ? 'opladen' : 'ontladen'}` : 'Geen batterij';
+      document.getElementById('online').textContent = info.online ? 'Ja' : 'Nee';
+      document.getElementById('ip').textContent = info.ip || '???';
+      document.getElementById('uptime').textContent = `${Math.floor(info.uptimeSec / 3600)}h ${Math.floor((info.uptimeSec % 3600)/60)}m`;
+      document.getElementById('cpu-val').textContent = `${info.cpuLoad}%`;
+      document.getElementById('cpu-bar').style.width = `${Math.min(info.cpuLoad, 100)}%`;
+      document.getElementById('mem-val').textContent = `${memPct}%`;
+      document.getElementById('mem-bar').style.width = `${Math.min(memPct, 100)}%`;
+      document.getElementById('host').textContent = info.hostname || 'NEXUS';
+    }
+
+    async function refreshSystem() {
+      try {
+        const info = await api.getSystemInfo();
+        renderSystem(info);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadConfig() {
+      try {
+        const loaded = await api.getConfig();
+        config = loaded || config;
+        document.getElementById('profile-name').value = config.name || '';
+        renderBookmarks();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function openUrl(url) {
+      api.openUrl(url);
+    }
+
+    function run(key) {
+      api.openProgram(key);
+    }
+
+    function action(command) {
+      const confirmText = command === 'shutdown'
+        ? 'Weet je zeker dat je de computer wilt afsluiten?'
+        : command === 'restart'
+          ? 'Weet je zeker dat je wilt herstarten?'
+          : 'Weet je zeker dat je deze actie wilt uitvoeren?';
+      if (confirm(confirmText)) {
+        api.systemAction(command);
+      }
+    }
+
+    function saveConfig(skipReload = false) {
+      config.name = document.getElementById('profile-name').value.trim();
+      api.saveConfig(config).then(updated => {
+        config = updated || config;
+        if (!skipReload) alert('Configuratie opgeslagen.');
+      }).catch(console.error);
+    }
+
+    function fastStart() {
+      api.fastStart();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadConfig();
+      refreshSystem();
+      updateClock();
+      setInterval(updateClock, 1000);
+      setInterval(refreshSystem, 3000);
+      document.querySelector('button[onclick="run(\'fastStart\')"]')?.addEventListener('click', fastStart);
+    });
+
+    const matrix = document.getElementById('matrix');
+    const ctx = matrix.getContext('2d');
+    const letters = '010101011001110100101101011101100101101110010101110101';
+    let fontSize = 16;
+    let columns = [];
+
+    function resize() {
+      matrix.width = window.innerWidth;
+      matrix.height = window.innerHeight;
+      fontSize = 16;
+      columns = Array(Math.floor(matrix.width / fontSize)).fill(1);
+    }
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+      ctx.fillRect(0, 0, matrix.width, matrix.height);
+      ctx.fillStyle = 'rgba(58, 255, 83, 0.14)';
+      ctx.font = fontSize + 'px monospace';
+      columns.forEach((y, index) => {
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        const x = index * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrix.height && Math.random() > 0.975) {
+          columns[index] = 0;
+        }
+        columns[index]++;
+      });
+      requestAnimationFrame(drawMatrix);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(drawMatrix);
+  </script>
+</body>
+</html>
