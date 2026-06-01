@@ -31,3 +31,29 @@ Extra info
 - Release met build is aangemaakt: https://github.com/silaspieper27-source/nexus-terminal/releases/tag/v1.0.0
 
 Als je wilt kan ik nog extra releases maken, de build signeren, of de installer (NSIS) afmaken — laat maar weten wat je wil.
+
+Fonts & Oh My Posh (snelle setup)
+
+1. Fonts
+	- Installeer een patched Nerd Font voor iconen (bijv. "Cascadia Code PL Nerd" of "MesloLGS Nerd"). Download van https://www.nerdfonts.com/ en installeer het op Windows (dubbelklik → Install).
+	- Stel het font in Windows Terminal via Settings → Profiles → Defaults → `Font face` → "Cascadia Code PL".
+
+2. Oh My Posh + PSReadLine
+	- Open PowerShell als Administrator en voer uit:
+```
+winget install JanDeDobbeleer.OhMyPosh -e
+Install-Module PSReadLine -Scope CurrentUser -Force
+```
+	- Voeg de volgende regels toe aan je PowerShell-profiel (`notepad $PROFILE`):
+```
+Import-Module oh-my-posh
+Set-PoshPrompt -Theme paradox
+Import-Module PSReadLine
+Set-PSReadLineOption -PredictionSource History
+```
+
+3. Tips
+	- Als je WSL gebruikt: installeer Nerd Font ook in Windows zodat Windows Terminal de glyphs correct toont.
+	- Voor thema's en extra prompts: zie https://ohmyposh.dev/.
+
+Gebruik `windows-terminal-settings.json` uit de repo om snel je Windows Terminal-profielen en kleuren te importeren.
