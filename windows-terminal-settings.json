@@ -1,0 +1,51 @@
+{
+  "$schema": "https://aka.ms/terminal-profiles-schema",
+  "defaultProfile": "{11111111-1111-1111-1111-111111111111}",
+  "copyOnSelect": true,
+  "historySize": 9001,
+  "profiles": {
+    "defaults": {
+      "fontFace": "Cascadia Code PL",
+      "fontSize": 12,
+      "colorScheme": "NexusDark",
+      "acrylicOpacity": 0.7,
+      "useAcrylic": true
+    },
+    "list": [
+      {
+        "guid": "{11111111-1111-1111-1111-111111111111}",
+        "name": "PowerShell 7",
+        "commandline": "pwsh.exe",
+        "startingDirectory": "%USERPROFILE%"
+      },
+      {
+        "guid": "{22222222-2222-2222-2222-222222222222}",
+        "name": "Windows PowerShell",
+        "commandline": "powershell.exe",
+        "startingDirectory": "%USERPROFILE%"
+      },
+      {
+        "guid": "{33333333-3333-3333-3333-333333333333}",
+        "name": "Ubuntu (WSL)",
+        "commandline": "wsl.exe -d Ubuntu",
+        "startingDirectory": "//wsl$/Ubuntu/home/%USERNAME%"
+      }
+    ]
+  },
+  "schemes": [
+    {
+      "name": "NexusDark",
+      "background": "#000000",
+      "foreground": "#BFFFBF",
+      "black": "#000000",
+      "green": "#14D114",
+      "brightGreen": "#6CFF6C",
+      "cursorColor": "#14D114"
+    }
+  ],
+  "actions": [
+    { "command": { "action": "copy" }, "keys": "ctrl+c" },
+    { "command": { "action": "paste" }, "keys": "ctrl+v" }
+  ],
+  "alwaysShowTabs": true
+}
